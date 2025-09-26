@@ -20,30 +20,28 @@ export default function SchemePage() {
                 const res = await axios.get(`/api/scheme/${code}`);
                 setScheme(res.data.meta);
 
-                // Last 1 year NAV data for chart
                 const navs = res.data.data
                     .slice(-365)
-                    .map(n => ({
-                        date: n.date,
-                        nav: parseFloat(n.nav)
-                    }))
+                    .map(n => ({ date: n.date, nav: parseFloat(n.nav) }))
                     .reverse();
 
                 setNavData(navs);
             } catch (err) {
-                console.error('Error fetching scheme:', err);
+                console.error(err);
             }
         }
 
         fetchScheme();
     }, [code]);
 
-    if (!scheme) return <Typography>Loading scheme details...</Typography>;
+    if (!scheme) return <Typography>Loading scheme...</Typography>;
 
     return (
         <div style={{ padding: '2rem' }}>
             <Typography variant="h4">{scheme.scheme_name}</Typography>
-            <Typography variant="body1">{scheme.scheme_type} | {scheme.scheme_category}</Typography>
+            <Typography variant="body1">
+                {scheme.scheme_type} | {scheme.scheme_category}
+            </Typography>
 
             <Card sx={{ mt: 3, p: 2 }}>
                 <Typography variant="h6">NAV History (1 Year)</Typography>

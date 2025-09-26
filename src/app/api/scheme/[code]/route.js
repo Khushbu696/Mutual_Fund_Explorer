@@ -1,17 +1,28 @@
 import { NextResponse } from 'next/server';
 import axios from 'axios';
-import { getCache, setCache } from '../../../utils/cache';
+
+let navCache = {};
 
 export async function GET(req, { params }) {
     const { code } = params;
-    const cached = getCache(`scheme_${code}`);
-    if (cached) return NextResponse.json(cached);
+
+    if (navCache[code]) {
+        return NextResponse.json(navCache[code]);
+    }
 
     try {
-        const { data } = await axios.get(`https://api.mfapi.in/mf/${code}`);
-        setCache(`scheme_${code}`, data, 12 * 3600);
-        return NextResponse.json(data);
+        const res = await axios.get(`https://api.mfapi.in/mf/${code}`);
+        const data = res.data;
+
+        // only keep plain JSON: metadata + data
+        const response = {
+            meta: data.meta,
+            data: data.data.map(n => ({ date: n.date, nav: parseFloat(n.nav) }))
+        };
+
+        navCache[code] = response;
+        return NextResponse.json(response);
     } catch (err) {
-        return NextResponse.json({ error: 'Failed to fetch scheme details' }, { status: 500 });
+        return NextResponse.json({ error: 'Failed to fetch scheme' }, { status: 500 });
     }
 }

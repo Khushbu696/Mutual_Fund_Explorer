@@ -1,51 +1,71 @@
 import { NextResponse } from 'next/server';
-import axios from 'axios';
 import dayjs from 'dayjs';
 
-export async function GET(req, { params, url }) {
+export async function GET(request, { params }) {
     const { code } = params;
-    const searchParams = new URL(url).searchParams;
-    const period = searchParams.get('period');
-    const from = searchParams.get('from');
-    const to = searchParams.get('to');
-
     try {
-        const { data } = await axios.get(`https://api.mfapi.in/mf/${code}`);
-        const navs = data.data.reverse();
+        const url = new URL(request.url);
+        const period = url.searchParams.get('period');
+        const from = url.searchParams.get('from');
+        const to = url.searchParams.get('to');
 
-        let startDate, endDate;
+        const res = await fetch(`https://api.mfapi.in/mf/${code}`);
+        const data = await res.json();
+        const raw = data.data ?? [];
 
+        // MFAPI returns latest-first; convert to array of {date, nav} with day order (latest-first)
+        const navs = raw.map(r => ({ date: r.date, nav: parseFloat(r.nav) }));
+
+        // determine endDate and startDate as dayjs
+        let endDate, startDate;
         if (period) {
-            endDate = dayjs();
+            // endDate = latest nav date
+            endDate = dayjs(navs[0]?.date, 'DD-MM-YYYY');
             if (period === '1m') startDate = endDate.subtract(1, 'month');
             else if (period === '3m') startDate = endDate.subtract(3, 'month');
             else if (period === '6m') startDate = endDate.subtract(6, 'month');
             else if (period === '1y') startDate = endDate.subtract(1, 'year');
+            else return NextResponse.json({ error: 'invalid period' }, { status: 400 });
         } else if (from && to) {
-            startDate = dayjs(from);
-            endDate = dayjs(to);
+            startDate = dayjs(from, 'YYYY-MM-DD');
+            endDate = dayjs(to, 'YYYY-MM-DD');
+        } else {
+            return NextResponse.json({ error: 'missing params' }, { status: 400 });
         }
 
-        const startNavObj = navs.find(n => dayjs(n.date, 'DD-MM-YYYY').isAfter(startDate) || dayjs(n.date, 'DD-MM-YYYY').isSame(startDate));
-        const endNavObj = navs.find(n => dayjs(n.date, 'DD-MM-YYYY').isAfter(endDate) || dayjs(n.date, 'DD-MM-YYYY').isSame(endDate)) || navs[navs.length - 1];
+        // find nearest earlier-or-same NAV for start and end
+        const findNavOnOrBefore = (target) => {
+            for (const n of navs) {
+                const nd = dayjs(n.date, 'DD-MM-YYYY');
+                if (nd.isSame(target) || nd.isBefore(target)) return n;
+            }
+            return null;
+        };
+
+        const startNavObj = findNavOnOrBefore(startDate);
+        const endNavObj = findNavOnOrBefore(endDate) || navs[0] || null;
 
         if (!startNavObj || !endNavObj) return NextResponse.json({ needs_review: true });
 
         const startNAV = parseFloat(startNavObj.nav);
         const endNAV = parseFloat(endNavObj.nav);
+
+        if (!startNAV || !endNAV) return NextResponse.json({ needs_review: true });
+
         const simpleReturn = ((endNAV - startNAV) / startNAV) * 100;
-        const years = endDate.diff(startDate, 'day') / 365;
-        const annualizedReturn = years >= 0.082 ? (Math.pow(endNAV / startNAV, 1 / years) - 1) * 100 : null;
+        const days = endDate.diff(startDate, 'day');
+        const annualizedReturn = days >= 30 ? (Math.pow(endNAV / startNAV, 365 / days) - 1) * 100 : null;
 
         return NextResponse.json({
-            startDate: startNavObj.date,
-            endDate: endNavObj.date,
-            startNAV,
-            endNAV,
-            simpleReturn: simpleReturn.toFixed(2),
-            annualizedReturn: annualizedReturn ? annualizedReturn.toFixed(2) : null,
+            startDate: startDate.format('YYYY-MM-DD'),
+            endDate: endDate.format('YYYY-MM-DD'),
+            startNAV: Number(startNAV.toFixed(4)),
+            endNAV: Number(endNAV.toFixed(4)),
+            simpleReturn: Number(simpleReturn.toFixed(2)),
+            annualizedReturn: annualizedReturn !== null ? Number(annualizedReturn.toFixed(2)) : null,
         });
     } catch (err) {
-        return NextResponse.json({ error: 'Failed to calculate returns' }, { status: 500 });
+        console.error('Error returns API', err);
+        return NextResponse.json({ error: 'Failed to compute returns' }, { status: 500 });
     }
 }

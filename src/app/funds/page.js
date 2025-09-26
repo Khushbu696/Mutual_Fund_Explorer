@@ -14,20 +14,18 @@ export default function FundsPage() {
         async function fetchFunds() {
             setLoading(true);
             try {
-                const res = await axios.get('/api/mf'); // fetch from API route
+                const res = await axios.get('/api/mf');
                 setFunds(res.data);
             } catch (err) {
-                console.error('Error fetching funds:', err);
+                console.error(err);
             }
             setLoading(false);
         }
-
         fetchFunds();
     }, []);
 
-    // Filter funds by search term
     const filteredFunds = funds.filter(f =>
-        f.scheme_name.toLowerCase().includes(search.toLowerCase())
+        f.scheme_name && f.scheme_name.toLowerCase().includes(search.toLowerCase())
     );
 
     return (
@@ -45,18 +43,14 @@ export default function FundsPage() {
             />
 
             {loading ? (
-                <Typography>Loading funds...</Typography>
+                <Typography>Loading...</Typography>
             ) : (
                 <Grid container spacing={2}>
-                    {filteredFunds.length > 0 ? (
-                        filteredFunds.map(f => (
-                            <Grid item xs={12} sm={6} md={4} key={f.scheme_code}>
-                                <FundCard fund={f} />
-                            </Grid>
-                        ))
-                    ) : (
-                        <Typography>No funds found.</Typography>
-                    )}
+                    {filteredFunds.map(f => (
+                        <Grid item xs={12} sm={6} md={4} key={f.scheme_code}>
+                            <FundCard fund={f} />
+                        </Grid>
+                    ))}
                 </Grid>
             )}
         </div>

@@ -1,51 +1,57 @@
 import { NextResponse } from 'next/server';
 import axios from 'axios';
-import dayjs from 'dayjs';
+
+function getMonthlyDates(start, end) {
+    const dates = [];
+    let d = new Date(start);
+    while (d <= end) {
+        dates.push(new Date(d));
+        d.setMonth(d.getMonth() + 1);
+    }
+    return dates;
+}
 
 export async function POST(req, { params }) {
     const { code } = params;
     const body = await req.json();
-    const { amount, frequency, from, to } = body;
-
-    if (!amount || !frequency || !from || !to) {
-        return NextResponse.json({ error: 'Missing fields' }, { status: 400 });
-    }
+    const { amount, from, to } = body;
 
     try {
-        const { data } = await axios.get(`https://api.mfapi.in/mf/${code}`);
-        const navs = data.data.reverse();
+        const res = await axios.get(`https://api.mfapi.in/mf/${code}`);
+        const navData = res.data.data.map(n => ({ date: n.date, nav: parseFloat(n.nav) }));
 
-        let totalUnits = 0, totalInvested = 0;
+        const startDate = new Date(from);
+        const endDate = new Date(to);
+
+        const sipDates = getMonthlyDates(startDate, endDate);
+
+        let totalUnits = 0;
+        let totalInvested = 0;
         const history = [];
 
-        let current = dayjs(from);
-        const endDate = dayjs(to);
-        const step = frequency === 'monthly' ? 'month' : frequency === 'weekly' ? 'week' : 'month';
-
-        while (current.isBefore(endDate) || current.isSame(endDate)) {
-            const navObj = navs.slice().reverse().find(n => dayjs(n.date, 'DD-MM-YYYY').isBefore(current) || dayjs(n.date, 'DD-MM-YYYY').isSame(current));
-            if (navObj && parseFloat(navObj.nav) > 0) {
-                const nav = parseFloat(navObj.nav);
-                const units = amount / nav;
+        sipDates.forEach(d => {
+            // find nearest earlier NAV
+            const navObj = navData.find(n => new Date(n.date) <= d);
+            if (navObj && navObj.nav > 0) {
+                const units = amount / navObj.nav;
                 totalUnits += units;
                 totalInvested += amount;
-                history.push({ date: current.format('YYYY-MM-DD'), nav, units, value: units * nav });
+                history.push({ date: navObj.date, value: totalUnits * navObj.nav });
             }
-            current = current.add(1, step);
-        }
+        });
 
-        const latestNAV = parseFloat(navs[navs.length - 1].nav);
+        const latestNAV = navData.length > 0 ? navData[0].nav : 0;
         const currentValue = totalUnits * latestNAV;
+        const years = (endDate - startDate) / (1000 * 60 * 60 * 24 * 365.25);
         const absoluteReturn = ((currentValue - totalInvested) / totalInvested) * 100;
-        const years = endDate.diff(dayjs(from), 'day') / 365;
-        const annualizedReturn = Math.pow(currentValue / totalInvested, 1 / years) - 1;
+        const annualizedReturn = ((currentValue / totalInvested) ** (1 / years) - 1) * 100;
 
         return NextResponse.json({
-            totalInvested: totalInvested.toFixed(2),
-            currentValue: currentValue.toFixed(2),
-            totalUnits: totalUnits.toFixed(4),
-            absoluteReturn: absoluteReturn.toFixed(2),
-            annualizedReturn: (annualizedReturn * 100).toFixed(2),
+            totalInvested: parseFloat(totalInvested.toFixed(2)),
+            currentValue: parseFloat(currentValue.toFixed(2)),
+            totalUnits: parseFloat(totalUnits.toFixed(4)),
+            absoluteReturn: parseFloat(absoluteReturn.toFixed(2)),
+            annualizedReturn: parseFloat(annualizedReturn.toFixed(2)),
             history
         });
     } catch (err) {

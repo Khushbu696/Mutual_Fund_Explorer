@@ -1,16 +1,21 @@
 import { NextResponse } from 'next/server';
 import axios from 'axios';
-import { getCache, setCache } from '../../../utils/cache';
+
+let cache = null;
+let cacheTime = null;
 
 export async function GET() {
-    const cached = getCache('mf_list');
-    if (cached) return NextResponse.json(cached);
+    const now = Date.now();
+    if (cache && cacheTime && now - cacheTime < 1000 * 60 * 60 * 12) { // 12h cache
+        return NextResponse.json(cache);
+    }
 
     try {
-        const { data } = await axios.get('https://api.mfapi.in/mf');
-        setCache('mf_list', data, 12 * 3600);
-        return NextResponse.json(data);
+        const res = await axios.get('https://api.mfapi.in/mf');
+        cache = res.data; // plain JSON
+        cacheTime = now;
+        return NextResponse.json(cache);
     } catch (err) {
-        return NextResponse.json({ error: 'Failed to fetch MF list' }, { status: 500 });
+        return NextResponse.json({ error: 'Failed to fetch schemes' }, { status: 500 });
     }
 }

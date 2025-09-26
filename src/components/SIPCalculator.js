@@ -7,7 +7,6 @@ import { LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts'
 
 export default function SIPCalculator({ code }) {
     const [amount, setAmount] = useState(5000);
-    const [frequency, setFrequency] = useState('monthly');
     const [from, setFrom] = useState('2020-01-01');
     const [to, setTo] = useState('2023-12-31');
     const [result, setResult] = useState(null);
@@ -18,13 +17,12 @@ export default function SIPCalculator({ code }) {
         try {
             const res = await axios.post(`/api/scheme/${code}/sip`, {
                 amount,
-                frequency,
                 from,
                 to
             });
             setResult(res.data);
         } catch (err) {
-            console.error('Error calculating SIP:', err);
+            console.error(err);
         }
         setLoading(false);
     };
@@ -39,11 +37,6 @@ export default function SIPCalculator({ code }) {
                     type="number"
                     value={amount}
                     onChange={e => setAmount(e.target.value)}
-                />
-                <TextField
-                    label="Frequency"
-                    value={frequency}
-                    onChange={e => setFrequency(e.target.value)}
                 />
                 <TextField
                     label="From"
