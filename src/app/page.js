@@ -9,7 +9,19 @@ export default function Home() {
         Explore mutual funds and calculate SIP returns using historical NAV data.
       </Typography>
       <Link href="/funds" passHref>
-        <Button variant="contained">Browse Funds</Button>
+        <Button variant="contained" sx={{ mr: 2 }}>Browse Funds</Button>
+      </Link>
+      <Link href="/sip" passHref>
+        <Button variant="outlined" sx={{ mr: 2 }}>SIP Calculator</Button>
+      </Link>
+      <Link href="/lumpsum" passHref>
+        <Button variant="outlined" sx={{ mr: 2 }}>Lumpsum Calculator</Button>
+      </Link>
+      <Link href="/swp" passHref>
+        <Button variant="outlined" sx={{ mr: 2 }}>SWP Calculator</Button>
+      </Link>
+      <Link href="/compare" passHref>
+        <Button variant="outlined">Compare Funds</Button>
       </Link>
     </Box>
   );

@@ -1,36 +1,51 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Mutual Fund Explorer
+
+A modern Next.js application for exploring Indian mutual funds, calculating SIP, Lumpsum, and SWP returns, and comparing fund performance. Built with Material UI and MUI Charts for a beautiful, responsive experience.
+
+## Features
+
+- **Fund Search & Listing**: Browse and filter all mutual funds by name, category, and fund house.
+- **Scheme Detail Page**: View scheme metadata, NAV history (1 year), pre-computed returns, and ISIN info.
+- **SIP Calculator**: Calculate returns for systematic investment plans using historical NAV data.
+- **Lumpsum Calculator**: Compare one-time investments with SIP.
+- **SWP Calculator**: Simulate periodic withdrawals from a fund.
+- **Compare Funds**: Side-by-side NAV chart for two schemes.
+- **Advanced Visualizations**: Interactive charts for NAV, SIP growth, and SWP value.
+- **Modern UI**: Responsive, mobile-friendly design with a pink theme.
+
+## Data Source
+
+All data is fetched from [MFAPI.in](https://www.mfapi.in/):
+- List of all schemes: `https://api.mfapi.in/mf`
+- Scheme NAV history: `https://api.mfapi.in/mf/{SCHEME_CODE}`
 
 ## Getting Started
 
-First, run the development server:
+1. **Install dependencies**:
+	```bash
+	npm install
+	```
+2. **Run the development server**:
+	```bash
+	npm run dev
+	```
+3. **Open in browser**:
+	Visit [http://localhost:3000](http://localhost:3000)
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## Project Structure
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+- `src/app/` - Next.js app pages and API routes
+- `src/components/` - Reusable React components (Navbar, FundCard, SIPCalculator, etc.)
+- `src/utils/` - Utility functions (caching, etc.)
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+## API Endpoints
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- `GET /api/mf` - List all schemes (cached)
+- `GET /api/scheme/:code` - Scheme metadata + NAV history
+- `GET /api/scheme/:code/returns` - Returns calculator (period or custom range)
+- `POST /api/scheme/:code/sip` - SIP calculator
 
-## Learn More
+## Customization
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Change theme colors in `src/components/ThemeRegistry.js`
+- Add new calculators or visualizations in `src/app/`
