@@ -7,6 +7,7 @@ import { LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts"
 export default function SWPCalculator() {
   const [code, setCode] = useState("");
   const [schemes, setSchemes] = useState([]);
+  const [initialAmount, setInitialAmount] = useState(10000);
   const [withdraw, setWithdraw] = useState(1000);
   const [from, setFrom] = useState("2020-01-01");
   const [to, setTo] = useState("2023-01-01");
@@ -42,7 +43,6 @@ export default function SWPCalculator() {
       const navData = res.data.data;
       const swpDates = getMonthlyDates(from, to);
       let units = 0;
-      let initialInvestment = withdraw * swpDates.length;
       let history = [];
       let totalWithdrawn = 0;
       let finalValue = 0;
@@ -54,20 +54,35 @@ export default function SWPCalculator() {
         return;
       }
       const startNAV = startNavObj.nav;
-      units = initialInvestment / startNAV;
+      units = initialAmount / startNAV;
       let remainingUnits = units;
       swpDates.forEach(date => {
-        const navObj = navData.find(n => n.date === date);
+        // Find NAV for this date, fallback to closest previous date if not found
+        let navObj = navData.find(n => n.date === date);
+        if (!navObj) {
+          // Find closest previous NAV
+          navObj = navData.slice().reverse().find(n => n.date < date);
+        }
         if (navObj && remainingUnits > 0) {
           const withdrawUnits = withdraw / navObj.nav;
-          remainingUnits -= withdrawUnits;
-          totalWithdrawn += withdraw;
+          if (withdrawUnits <= remainingUnits) {
+            remainingUnits -= withdrawUnits;
+            totalWithdrawn += withdraw;
+          } else {
+            // Withdraw whatever is left
+            totalWithdrawn += remainingUnits * navObj.nav;
+            remainingUnits = 0;
+          }
           history.push({ date, value: parseFloat((remainingUnits * navObj.nav).toFixed(2)) });
+        } else if (navObj) {
+          history.push({ date, value: 0 });
         }
       });
-      finalValue = remainingUnits > 0 ? parseFloat((remainingUnits * navData[0].nav).toFixed(2)) : 0;
+      // Use latest NAV for final value
+      const latestNavObj = navData[0];
+      finalValue = remainingUnits > 0 ? parseFloat((remainingUnits * latestNavObj.nav).toFixed(2)) : 0;
       setResult({
-        initialInvestment: initialInvestment,
+        initialInvestment: initialAmount,
         totalWithdrawn: totalWithdrawn,
         finalValue: finalValue,
         history: history
@@ -105,7 +120,8 @@ export default function SWPCalculator() {
             ))}
           </Select>
         </FormControl>
-        <TextField label="Monthly Withdraw" type="number" value={withdraw} onChange={e => setWithdraw(e.target.value)} sx={{ mr: 2 }} />
+  <TextField label="Initial Amount" type="number" value={initialAmount} onChange={e => setInitialAmount(Number(e.target.value))} sx={{ mr: 2 }} />
+  <TextField label="Monthly Withdraw" type="number" value={withdraw} onChange={e => setWithdraw(Number(e.target.value))} sx={{ mr: 2 }} />
         <TextField label="From" type="date" value={from} onChange={e => setFrom(e.target.value)} sx={{ mr: 2 }} InputLabelProps={{ shrink: true }} />
         <TextField label="To" type="date" value={to} onChange={e => setTo(e.target.value)} sx={{ mr: 2 }} InputLabelProps={{ shrink: true }} />
         <Button variant="contained" onClick={handleCalculate} disabled={loading} sx={{ mt: 2 }}>

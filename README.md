@@ -13,6 +13,27 @@ A modern Next.js application for exploring Indian mutual funds, calculating SIP,
 - **Advanced Visualizations**: Interactive charts for NAV, SIP growth, and SWP value.
 - **Modern UI**: Responsive, mobile-friendly design with a pink theme.
 
+## Screenshots
+
+### Home Page
+![Home Page](public/images/home_page.png)
+
+### Funds Page
+![Funds Listing](public/images/funds_page.png)
+
+### SIP Calculator
+![SIP Calculator](public/images/sip_cal.png)
+
+### Lumpsum Calculator
+![Lumpsum Calculator](public/images/lumpsum_cal.png)
+
+### SWP Calculator
+![SWP Calculator](public/images/swp_cal.png)
+
+### Compare Funds
+![Compare Funds](public/images/compare_page.png)
+
+
 ## Data Source
 
 All data is fetched from [MFAPI.in](https://www.mfapi.in/):
