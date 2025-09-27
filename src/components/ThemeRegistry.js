@@ -6,7 +6,7 @@ const theme = createTheme({
   palette: {
     mode: "light",
     primary: {
-      main: "#e91e63", // Pink
+      main: "#008080", // Teal
     },
   },
 });

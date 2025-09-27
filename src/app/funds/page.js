@@ -2,8 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Grid, TextField, Typography, Box, Divider, Select, MenuItem, InputLabel, FormControl } from '@mui/material';
+import { Grid, TextField, Typography, Box, Divider, Select, MenuItem, InputLabel, FormControl, Card, CardContent } from '@mui/material';
+import { ThemeProvider, createTheme } from '@mui/material/styles';
 import FundCard from '../../components/FundCard';
+
 
 export default function FundsPage() {
     const [funds, setFunds] = useState([]);
@@ -63,10 +65,20 @@ export default function FundsPage() {
 
     return (
         <div style={{ padding: '2rem' }}>
-            <Typography variant="h4" gutterBottom>
+            <Typography variant="h4" gutterBottom color="primary">
                 Mutual Funds Explorer
             </Typography>
-
+            <Card sx={{ mb: 4, background: '#fce4ec' }}>
+              <CardContent>
+                <Typography variant="h6" color="primary" gutterBottom>Browse All Indian Mutual Funds</Typography>
+                <Typography variant="body1" gutterBottom>
+                  Use the filters to find funds by category or fund house. Click "View Details" for NAV history, returns, and calculators.
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  <b>Tip:</b> Try searching for "Aditya Birla", "SBI", or "Equity" to see popular funds.
+                </Typography>
+              </CardContent>
+            </Card>
             <Box sx={{ display: 'flex', gap: 2, mb: 2, flexWrap: 'wrap' }}>
                 <TextField
                     label="Search funds"
